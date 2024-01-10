@@ -12,7 +12,7 @@ import tarfile
 from pathlib import Path
 from typing import List, Literal, Optional, Tuple, Union
 from zipfile import ZipFile
-
+import random
 import cv2
 import mediapipe as mp
 import numpy as np
@@ -140,7 +140,6 @@ def swin_ir_sr(
     Upscales images using SwinIR. Returns a list of PIL images.
     If the image is already larger than the target size, it will not be upscaled
     and will be returned as is.
-
     """
     if not os.path.exists(SWIN2SR_PATH):
         download_weights(SWIN2SR_URL, SWIN2SR_PATH)
@@ -405,30 +404,37 @@ def face_mask_google_mediapipe(
     return masks
 
 
-def _crop_to_square(
-    image: Image.Image, com: List[Tuple[int, int]], resize_to: Optional[int] = None
+def _crop_and_resize(
+    image: Image.Image
 ):
-    cx, cy = com
-    width, height = image.size
-    if width > height:
-        left_possible = max(cx - height / 2, 0)
-        left = min(left_possible, width - height)
-        right = left + height
+    original_width, original_height = image.size
+    original_aspect_ratio = original_width / original_height
+
+    # Get the closest allowed dimensions based on the aspect ratio
+    new_width, new_height = resize_to_allowed_dimensions(original_width, original_height)
+    new_aspect_ratio = new_width / new_height
+
+    # Determine the dimensions to crop the original image to match the new aspect ratio
+    if original_aspect_ratio > new_aspect_ratio:
+        # Original is wider than new aspect ratio, so crop width
+        crop_width = int(original_height * new_aspect_ratio)
+        crop_height = original_height
+        left = (original_width - crop_width) / 2
         top = 0
-        bottom = height
     else:
+        # Original is taller than new aspect ratio, so crop height
+        crop_height = int(original_width / new_aspect_ratio)
+        crop_width = original_width
         left = 0
-        right = width
-        top_possible = max(cy - width / 2, 0)
-        top = min(top_possible, height - width)
-        bottom = top + width
+        top = (original_height - crop_height) / 2
 
-    image = image.crop((left, top, right, bottom))
+    # Perform the cropping
+    cropped_image = image.crop((left, top, left + crop_width, top + crop_height))
 
-    if resize_to:
-        image = image.resize((resize_to, resize_to), Image.Resampling.LANCZOS)
+    # Resize the cropped image to the new dimensions
+    resized_cropped_image = cropped_image.resize((new_width, new_height), Image.LANCZOS)
+    return resized_cropped_image
 
-    return image
 
 def resize_to_allowed_dimensions(
     width : int, height : int,
@@ -451,15 +457,6 @@ def resize_to_allowed_dimensions(
         key=lambda dim: abs(dim[0] / dim[1] - aspect_ratio)
     )
     return closest_dimensions
-
-
-def _resize(
-    image: Image.Image
-):
-    original_width, original_height = image.size
-    new_width, new_height = resize_to_allowed_dimensions(original_width, original_height)
-    resized_image = image.resize((new_width, new_height), Image.LANCZOS)
-    return resized_image
 
 
 def _center_of_mass(mask: Image.Image):
@@ -564,19 +561,20 @@ def load_and_save_masks_and_captions(
         seg_masks = face_mask_google_mediapipe(images=images)
 
     images = [
-        _resize(image, resize_to=None) for image in images
+        image for image in images
     ]
 
     print(f"Upscaling {len(images)} images...")
     # upscale images anyways
     images = swin_ir_sr(images, target_size=(target_size, target_size))
     images = [
-        _resize(image, resize_to=target_size)
+        _crop_and_resize(image)
         for image in images
     ]
+    
 
     seg_masks = [
-        _resize(mask, resize_to=target_size)
+        _crop_and_resize(mask)
         for mask in seg_masks
     ]
 
