@@ -430,15 +430,36 @@ def _crop_to_square(
 
     return image
 
-def _resize(
-    image: Image.Image, resize_to: Optional[int] = None
+def resize_to_allowed_dimensions(
+    width : int, height : int,
 ):
-    if resize_to:
-        aspect_ratio = image.size[1] / image.size[0]
-        new_height = int(resize_to * aspect_ratio)
-        image = image.resize((resize_to, new_height), Image.Resampling.LANCZOS)
+    allowed_dimensions = [
+        (512, 2048), (512, 1984), (512, 1920), (512, 1856),
+        (576, 1792), (576, 1728), (576, 1664), (640, 1600),
+        (640, 1536), (704, 1472), (704, 1408), (704, 1344),
+        (768, 1344), (768, 1280), (832, 1216), (832, 1152),
+        (896, 1152), (896, 1088), (960, 1088), (960, 1024),
+        (1024, 1024), (1024, 960), (1088, 960), (1088, 896),
+        (1152, 896), (1152, 832), (1216, 832), (1280, 768),
+        (1344, 768), (1408, 704), (1472, 704), (1536, 640),
+        (1600, 640), (1664, 576), (1728, 576), (1792, 576),
+        (1856, 512), (1920, 512), (1984, 512), (2048, 512)
+    ]
+    aspect_ratio = width / height
+    closest_dimensions = min(
+        allowed_dimensions,
+        key=lambda dim: abs(dim[0] / dim[1] - aspect_ratio)
+    )
+    return closest_dimensions
 
-    return image
+
+def _resize(
+    image: Image.Image
+):
+    original_width, original_height = image.size
+    new_width, new_height = resize_to_allowed_dimensions(original_width, original_height)
+    resized_image = image.resize((new_width, new_height), Image.LANCZOS)
+    return resized_image
 
 
 def _center_of_mass(mask: Image.Image):
