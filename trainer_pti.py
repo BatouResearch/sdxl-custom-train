@@ -395,6 +395,7 @@ def main(
     )
 
     to_save = token_dict
+    print("Final tokens used in special_params.json", to_save)
     with open(f"{output_dir}/special_params.json", "w") as f:
         json.dump(to_save, f)
 

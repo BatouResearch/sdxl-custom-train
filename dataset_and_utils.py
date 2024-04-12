@@ -60,6 +60,7 @@ class PreprocessedDataset(Dataset):
         # make it lowercase
         self.caption = self.caption.str.lower()
         for key, value in substitute_caption_map.items():
+            print("Values in token_dict: ", key, value)
             self.caption = self.caption.str.replace(key.lower(), value)
 
         self.image_path = self.data["image_path"]

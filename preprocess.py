@@ -259,6 +259,7 @@ def blip_captioning_dataset(
         caption = processor.decode(out[0], skip_special_tokens=True)
 
         # BLIP 2 lowercases all caps tokens. This should properly replace them w/o messing up subwords. I'm sure there's a better way to do this.
+        print("in preprocessing substitution_tokens list is made into part of training caption")
         for token in substitution_tokens:
             print(token)
             sub_cap = " " + caption + " "

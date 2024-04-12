@@ -122,7 +122,7 @@ def train(
 ) -> TrainingOutput:
     # Hard-code token_map for now. Make it configurable once we support multiple concepts or user-uploaded caption csv.
     token_map = token_string + ":2"
-
+    print("initia token map: ", token_map)
     # Process 'token_to_train' and 'input_data_tar_or_zip'
     inserting_list_tokens = token_map.split(",")
 
@@ -138,7 +138,8 @@ def train(
         all_token_lists.extend([f"<s{i + running_tok_cnt}>" for i in range(n_tok)])
 
         running_tok_cnt += n_tok
-
+    print("token list to dict: ", inserting_list_tokens, " to ", token_dict)
+    print("initial token list to all_token_lists used in main: ", all_token_lists)
     input_dir = preprocess(
         input_images_filetype=input_images_filetype,
         input_zip_path=input_images,
