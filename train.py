@@ -133,7 +133,7 @@ def train(
         n_tok = int(token.split(":")[1])
 
         token_dict[token.split(":")[0]] = "".join(
-            [f"<s{i + running_tok_cnt}>" for i in range(n_tok)]
+            [token]
         )
         all_token_lists.extend([f"<s{i + running_tok_cnt}>" for i in range(n_tok)])
 
