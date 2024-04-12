@@ -1,6 +1,8 @@
 import os
 import shutil
 import tarfile
+import nltk
+from nltk.tokenize import word_tokenize
 
 from cog import BaseModel, Input, Path
 
@@ -121,21 +123,17 @@ def train(
     ),
 ) -> TrainingOutput:
     # Hard-code token_map for now. Make it configurable once we support multiple concepts or user-uploaded caption csv.
-    token_map = token_string + ":2"
+    token_map = token_string
     print("initia token map: ", token_map)
     # Process 'token_to_train' and 'input_data_tar_or_zip'
-    inserting_list_tokens = token_map.split(",")
-
+    inserting_list_tokens = word_tokenize(token_map)
     token_dict = {}
     running_tok_cnt = 0
     all_token_lists = []
     for token in inserting_list_tokens:
-        n_tok = int(token.split(":")[1])
-
-        token_dict[token.split(":")[0]] = "".join(
-            [token]
-        )
-        all_token_lists.extend([f"<s{i + running_tok_cnt}>" for i in range(n_tok)])
+        n_tok = int(len(inserting_list_tokens))
+        token_dict[token] = token
+        all_token_lists.extend([token for i in range(n_tok)])
 
         running_tok_cnt += n_tok
     print("token list to dict: ", inserting_list_tokens, " to ", token_dict)
